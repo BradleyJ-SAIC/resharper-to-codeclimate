@@ -14,9 +14,9 @@ namespace ReSharperToCodeClimate
     {
         public static void Main(string[] args)
         {
-            if(args.Length != 2)
+            if(args.Length < 2 || args.Length > 3)
             {
-                Console.WriteLine("Usage: dotnet resharper-to-codeclimate input.xml output.json");
+                Console.WriteLine("Usage: dotnet resharper-to-codeclimate input.xml output.json [path]");
                 Environment.Exit(1);
             }
 
@@ -24,6 +24,12 @@ namespace ReSharperToCodeClimate
 
             XElement reSharperReport = XElement.Load(args[0]);
             Dictionary<string, string> severityByIssueType = CreateSeverityByIssueTypeDictionary(reSharperReport.Descendants("IssueType"));
+
+            string basePath = "";
+            if(args.Length == 3)
+            {
+                basePath = args[2];
+            }
 
             foreach (XElement issue in reSharperReport.Descendants("Issue"))
             {
@@ -39,7 +45,7 @@ namespace ReSharperToCodeClimate
                         Fingerprint = CalculateFingerprint(issue),
                         Location = new IssueLocation()
                         {
-                            Path = issue.Attribute("File").Value.Replace("\\", "/"),
+                            Path = Path.Join(basePath, issue.Attribute("File").Value).Replace("\\", "/"),
                             Lines = new LineRange()
                             {
                                 Begin = int.Parse(issue.Attribute("Line")?.Value ?? "0")
